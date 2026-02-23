@@ -1,0 +1,17 @@
+# Re-allow PHP execution for API endpoints
+# (overrides root .htaccess FilesMatch deny)
+<FilesMatch "\.php$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# Still deny non-PHP files in this directory
+<FilesMatch "\.(sqlite|json|jsonl|md|py|yml|log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+</FilesMatch>

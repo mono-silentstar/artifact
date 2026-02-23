@@ -1,0 +1,12 @@
+{
+  "jobs_dir": "data/jobs",
+  "state_dir": "data/state",
+  "sessions_dir": "data/sessions",
+  "fragment_db_path": "data/artifact.sqlite",
+  "wake_context_path": "wake-context.md",
+  "ambient_path": "ambient.md",
+  "keys_db_path": "data/keys.sqlite",
+  "claude_timeout": 90,
+  "claude_model": "claude-sonnet-4-5-20250929",
+  "verbose": true
+}

@@ -1,0 +1,18 @@
+---
+deployment:
+  tasks:
+    # Deploy PHP frontend
+    - export DEPLOYPATH=/home/monomeuk/public_html/artifact
+    - mkdir -p $DEPLOYPATH
+    - /bin/cp -R web/. $DEPLOYPATH/
+    # Deploy Python backend
+    - export PYPATH=/home/monomeuk/artifact
+    - mkdir -p $PYPATH
+    - /bin/cp -R agents/ $PYPATH/agents/
+    - /bin/cp -R wake/ $PYPATH/wake/
+    - /bin/cp -R ingest/ $PYPATH/ingest/
+    - /bin/cp -R worker/ $PYPATH/worker/
+    - /bin/cp -f keygen.py $PYPATH/
+    - /bin/cp -f populate_demo.py $PYPATH/
+    - /bin/cp -f ambient.md $PYPATH/ 2>/dev/null || true
+    - /bin/cp -f wake-context.md $PYPATH/ 2>/dev/null || true

@@ -1,0 +1,35 @@
+# Runtime data
+data/
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Local/server configs (may contain API keys or server paths)
+web/config.local.php
+worker/config.server.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+.claude/*
+!.claude/agents/
+
+# OS extras
+nul
+*Zone.Identifier
+*:Zone.Identifier
+
+# Logs
+*.log

@@ -1,0 +1,11 @@
+{
+  "name": "Artifact",
+  "short_name": "Artifact",
+  "description": "Persistent Memory for Stateless AI",
+  "start_url": "/artifact/",
+  "scope": "/artifact/",
+  "display": "standalone",
+  "background_color": "#0e0e12",
+  "theme_color": "#0e0e12",
+  "icons": []
+}
