@@ -288,7 +288,8 @@ def _load_conversation(
                GROUP_CONCAT(t.tag) as tags
         FROM events e
         LEFT JOIN event_tags t ON t.event_id = e.id AND t.tag IN ('say', 'do', 'narrate')
-        WHERE t.tag IS NOT NULL OR e.actor IS NOT NULL
+        WHERE t.tag IS NOT NULL
+           OR (e.actor IS NOT NULL AND e.actor NOT IN ('claude', 'artifact'))
         GROUP BY e.id
         ORDER BY e.ts DESC
         LIMIT 200
@@ -350,11 +351,9 @@ def _load_conversation(
                 elif tag in ("do", "narrate"):
                     do_parts.append(text)
 
-            # Fallback: untagged Claude content treated as say
+            # Skip Claude events with no display content
             if not say_parts and not do_parts:
-                clean = _TAG_STRIP_RE.sub("", raw).strip()
-                if clean:
-                    say_parts.append(clean)
+                continue
 
             # Allocate say content
             if say_parts:

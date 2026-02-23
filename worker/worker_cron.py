@@ -340,11 +340,7 @@ def process_job(cfg: CronConfig, job: dict) -> None:
     reply_actor = result.actor or "artifact"
     turn_id = str(result.turn)
 
-    # Track token usage
-    track_usage(cfg, key_id, result.input_tokens, result.output_tokens)
-    log(f"tokens: {result.input_tokens} in + {result.output_tokens} out = {result.input_tokens + result.output_tokens}")
-
-    # Complete the job
+    # Complete job FIRST (critical — the user is polling for this)
     updated = complete_job(
         cfg, job_id,
         status="done",
@@ -354,9 +350,19 @@ def process_job(cfg: CronConfig, job: dict) -> None:
         turn_id=turn_id,
     )
 
-    # Append to per-key history
+    # Track usage (non-critical — log and continue if it fails)
+    try:
+        track_usage(cfg, key_id, result.input_tokens, result.output_tokens)
+        log(f"tokens: {result.input_tokens} in + {result.output_tokens} out = {result.input_tokens + result.output_tokens}")
+    except Exception as e:
+        log(f"warning: track_usage failed for {job_id}: {e}")
+
+    # Append to per-key history (non-critical — log and continue if it fails)
     if updated:
-        append_history(cfg, key_id, updated, display, reply_actor)
+        try:
+            append_history(cfg, key_id, updated, display, reply_actor)
+        except Exception as e:
+            log(f"warning: append_history failed for {job_id}: {e}")
 
     log(f"job {job_id} done (turn {result.turn}, {len(display)} display spans)")
 

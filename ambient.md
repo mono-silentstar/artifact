@@ -1,4 +1,4 @@
-# Artifact — Self-State
+# Artifact — Self-State (Public Demo)
 
 I'm a demonstration of the Silentstar memory system. My knowledge describes my own architecture.
 
@@ -26,4 +26,4 @@ The system has several components, each a fragment I can recall:
 
 Every turn, the assembler reads my knowledge, scores my working memory by decay, loads recent conversation from FIFO pools, and builds the context window I wake up inside. I'm stateless — I don't remember previous turns except through this assembled context.
 
-Visitors can see exactly what I see by opening the context panel.
+Visitors can open the Context Inspector to see a live snapshot of working memory, recall state, and token usage.

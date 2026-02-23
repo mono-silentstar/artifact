@@ -11,8 +11,8 @@ $defaults = [
     'session_cookie_name'   => 'artifact_session',
     'bridge_online_ttl_sec' => 90,
     'job_stale_sec'         => 600,
-    'data_dir'              => 'data',
-    'keys_db'               => 'data/keys.sqlite',
+    'data_dir'              => '../data',
+    'keys_db'               => '../data/keys.sqlite',
     'timezone'              => 'UTC',
 ];
 

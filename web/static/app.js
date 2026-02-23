@@ -13,9 +13,11 @@
   let pendingJobId = null;
   let pollTimer = null;
   let pollErrors = 0;
+  let isPolling = false;
   const MAX_POLL_ERRORS = 10;
   let bridgeTimer = null;
   let contextOpen = false;
+  let firstTipShown = false;
 
   // --- DOM refs ---
   const landing = document.getElementById('landing');
@@ -113,12 +115,6 @@
 
   document.querySelectorAll('.tone-chip').forEach(chip => {
     chip.addEventListener('click', () => selectTone(chip));
-    chip.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectTone(chip);
-      }
-    });
   });
 
   // --- Chat form ---
@@ -296,6 +292,8 @@
       clearInterval(pollTimer);
       return;
     }
+    if (isPolling) return;
+    isPolling = true;
 
     try {
       const resp = await fetch(`api/status.php?id=${encodeURIComponent(pendingJobId)}`);
@@ -329,6 +327,10 @@
         }
         refreshUsage();
         refreshContext();
+        if (!firstTipShown) {
+          firstTipShown = true;
+          appendSystem('Tip: Open the Context Inspector (top-right) to see working memory, recall state, and token usage in real time.');
+        }
       }
 
       pendingJobId = null;
@@ -341,6 +343,8 @@
         appendSystem('Connection lost. Please refresh and try again.');
         pendingJobId = null;
       }
+    } finally {
+      isPolling = false;
     }
   }
 
@@ -401,6 +405,18 @@
     });
   }
 
+  // --- Logout ---
+
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('api/logout.php', { method: 'POST' });
+      } catch (e) { /* ignore */ }
+      window.location.reload();
+    });
+  }
+
   async function refreshContext() {
     if (!contextOpen) return;
 
@@ -413,19 +429,19 @@
       let html = '';
 
       // Turn counter
-      html += `<div class="ctx-section"><h3>Turn</h3><p>${ctx.turn}</p></div>`;
+      html += `<div class="ctx-section"><h3>Current Turn</h3><p>${ctx.turn}</p></div>`;
 
       // Usage
       if (ctx.usage) {
         const pct = ctx.usage.budget > 0
           ? Math.round((ctx.usage.remaining / ctx.usage.budget) * 100) : 0;
-        html += `<div class="ctx-section"><h3>Token Budget</h3>`;
+        html += `<div class="ctx-section"><h3>Token Budget (Session)</h3>`;
         html += `<p>${ctx.usage.remaining.toLocaleString()} / ${ctx.usage.budget.toLocaleString()} (${pct}%)</p>`;
         html += `</div>`;
       }
 
       // Working memory
-      html += `<div class="ctx-section"><h3>Working Memory</h3>`;
+      html += `<div class="ctx-section"><h3>Active Working Memory</h3>`;
       if (ctx.working_memory && ctx.working_memory.length > 0) {
         html += '<ul>';
         ctx.working_memory.forEach(item => {
@@ -433,15 +449,15 @@
         });
         html += '</ul>';
       } else {
-        html += '<p class="empty">No active items</p>';
+        html += '<p class="empty">No active items yet. Working memory fills as the conversation develops.</p>';
       }
       html += '</div>';
 
       // Events
-      html += `<div class="ctx-section"><h3>Events Logged</h3><p>${ctx.events_count}</p></div>`;
+      html += `<div class="ctx-section"><h3>Events (Session Log)</h3><p>${ctx.events_count}</p></div>`;
 
       // Pending recall
-      html += `<div class="ctx-section"><h3>Pending Recall</h3>`;
+      html += `<div class="ctx-section"><h3>Recall Queue (Next Turn)</h3>`;
       if (ctx.pending_recall && ctx.pending_recall.length > 0) {
         html += '<ul>';
         ctx.pending_recall.forEach(r => {
@@ -457,7 +473,7 @@
         });
         html += '</ul>';
       } else {
-        html += '<p class="empty">None</p>';
+        html += '<p class="empty">No pending recalls. The AI can request knowledge lookups during conversation.</p>';
       }
       html += '</div>';
 

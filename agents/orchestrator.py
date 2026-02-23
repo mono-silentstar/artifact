@@ -144,6 +144,9 @@ def turn(
     hot = f"visitor: {message}"
 
     previous_recall = _load_recall_results(config.db_path)
+    if previous_recall:
+        _save_recall_results(config.db_path, [])  # one-shot: consumed on load
+
     package = assemble(
         wake_config,
         hot_context=hot,

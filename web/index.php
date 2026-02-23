@@ -23,33 +23,78 @@ declare(strict_types=1);
 <div id="landing" class="landing">
   <div class="hero">
     <h1 class="hero-title">artifact</h1>
-    <p class="hero-sub">Persistent Memory for Stateless AI</p>
+    <p class="hero-sub">A public demo of a private memory architecture for stateless AI</p>
     <p class="hero-description">
-      Claude is stateless — every conversation starts from zero.
-      Artifact gives it continuity: a memory system built from
-      decay-scored knowledge, graph-connected fragments, and
-      context assembly that constructs what the AI wakes up inside.
+      Artifact is a live slice of the Silentstar memory system.
+      Every conversation turn, it assembles a fresh context window from
+      decay-scored working memory, graph-connected knowledge fragments,
+      and recent conversation history — then hands it to Claude, who wakes
+      up inside it with no memory of its own.
+      Open the Context Inspector to see exactly what gets built.
     </p>
   </div>
 
   <div class="how-it-works">
     <div class="step">
       <span class="step-num">1</span>
-      <span class="step-label">Knowledge stored as fragments with three depth tiers</span>
+      <span class="step-label">Knowledge lives in fragments — three depth tiers, from ambient to deep inventory</span>
     </div>
     <div class="step">
       <span class="step-num">2</span>
-      <span class="step-label">Working memory decays naturally over time and turns</span>
+      <span class="step-label">Working memory decays with type-specific half-lives — feelings fade fast, pins persist</span>
     </div>
     <div class="step">
       <span class="step-num">3</span>
-      <span class="step-label">Context assembled fresh for every conversation turn</span>
+      <span class="step-label">Every turn, context is assembled fresh — the AI wakes up inside the result</span>
     </div>
     <div class="step">
       <span class="step-num">4</span>
-      <span class="step-label">Graph edges connect related knowledge for recall</span>
+      <span class="step-label">Graph edges connect fragments — the AI can recall related knowledge on demand</span>
     </div>
   </div>
+
+  <div class="architecture-map">
+    <h3 class="map-title">Architecture Map</h3>
+    <div class="map-grid">
+      <div class="map-item">
+        <span class="map-icon">Heart</span>
+        <span class="map-chip live">Live in demo</span>
+        <span class="map-desc">Conversational instance — the AI you're talking to</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Gem</span>
+        <span class="map-chip live">Live in demo</span>
+        <span class="map-desc">Compiled knowledge store — fragments with three depth tiers</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Lens</span>
+        <span class="map-chip partial">Partially represented</span>
+        <span class="map-desc">Read and extraction tool — recall queries use this path</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Loom</span>
+        <span class="map-chip parent">Parent system</span>
+        <span class="map-desc">Multi-agent analysis pipeline</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Mirror</span>
+        <span class="map-chip parent">Parent system</span>
+        <span class="map-desc">Compression pipeline — distills conversation into knowledge</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Compass</span>
+        <span class="map-chip parent">Parent system</span>
+        <span class="map-desc">Autonomous planning system</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Anvil</span>
+        <span class="map-chip parent">Parent system</span>
+        <span class="map-desc">Collaborative editing sessions</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="key-helper">Private demo access. Keys isolate sessions and token budgets per reviewer.</p>
 
   <form id="key-form" class="key-form">
     <input id="key-input" class="key-input" type="password"
@@ -74,6 +119,7 @@ declare(strict_types=1);
       <div class="header-right">
         <span id="usage-badge" class="usage-badge"></span>
         <button id="context-toggle" class="context-toggle">context</button>
+        <button id="logout-btn" class="logout-btn">logout</button>
       </div>
     </div>
 
@@ -83,9 +129,9 @@ declare(strict_types=1);
 
     <div class="input-area">
       <div class="tone-row">
-        <span class="tone-chip active" data-tone="casual" role="button" tabindex="0" aria-pressed="true">casual</span>
-        <span class="tone-chip" data-tone="technical" role="button" tabindex="0" aria-pressed="false">technical</span>
-        <span class="tone-chip" data-tone="creative" role="button" tabindex="0" aria-pressed="false">creative</span>
+        <button type="button" class="tone-chip active" data-tone="casual" aria-pressed="true">casual</button>
+        <button type="button" class="tone-chip" data-tone="technical" aria-pressed="false">technical</button>
+        <button type="button" class="tone-chip" data-tone="creative" aria-pressed="false">creative</button>
       </div>
       <form id="chat-form">
         <div class="input-row">
@@ -101,7 +147,8 @@ declare(strict_types=1);
 
 <!-- Context panel -->
 <div id="context-panel" class="context-panel">
-  <h2>What Claude Sees</h2>
+  <h2>Context Inspector</h2>
+  <p class="ctx-subtitle">Live snapshot of working memory, recall state, and token usage</p>
   <div id="context-body"></div>
 </div>
 
