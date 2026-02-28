@@ -13,7 +13,7 @@ declare(strict_types=1);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/style.css?v=1">
+  <link rel="stylesheet" href="static/style.css?v=2">
 </head>
 <body>
 
@@ -23,78 +23,43 @@ declare(strict_types=1);
 <div id="landing" class="landing">
   <div class="hero">
     <h1 class="hero-title">artifact</h1>
-    <p class="hero-sub">A public demo of a private memory architecture for stateless AI</p>
+    <p class="hero-sub">Persistent memory for stateless AI</p>
     <p class="hero-description">
-      Artifact is a live slice of the Silentstar memory system.
-      Every conversation turn, it assembles a fresh context window from
-      decay-scored working memory, graph-connected knowledge fragments,
-      and recent conversation history — then hands it to Claude, who wakes
-      up inside it with no memory of its own.
-      Open the Context Inspector to see exactly what gets built.
+      Every turn, a context window is assembled from scored memory,
+      knowledge fragments, and graph recall. The AI wakes up inside it.
     </p>
   </div>
 
-  <div class="how-it-works">
-    <div class="step">
-      <span class="step-num">1</span>
-      <span class="step-label">Knowledge lives in fragments — three depth tiers, from ambient to deep inventory</span>
-    </div>
-    <div class="step">
-      <span class="step-num">2</span>
-      <span class="step-label">Working memory decays with type-specific half-lives — feelings fade fast, pins persist</span>
-    </div>
-    <div class="step">
-      <span class="step-num">3</span>
-      <span class="step-label">Every turn, context is assembled fresh — the AI wakes up inside the result</span>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <span class="step-label">Graph edges connect fragments — the AI can recall related knowledge on demand</span>
-    </div>
-  </div>
-
-  <div class="architecture-map">
-    <h3 class="map-title">Architecture Map</h3>
-    <div class="map-grid">
-      <div class="map-item">
-        <span class="map-icon">Heart</span>
-        <span class="map-chip live">Live in demo</span>
-        <span class="map-desc">Conversational instance — the AI you're talking to</span>
+  <div class="assembly">
+    <p class="assembly-label">context window &mdash; assembled fresh every turn</p>
+    <div class="assembly-window">
+      <div class="frag frag-ambient" style="--delay: 0.3s; --from-x: -40px; --from-y: -20px">
+        <span class="frag-type">ambient</span> personality &middot; tone
       </div>
-      <div class="map-item">
-        <span class="map-icon">Crystal</span>
-        <span class="map-chip live">Live in demo</span>
-        <span class="map-desc">Compiled knowledge store — fragments with three depth tiers</span>
+      <div class="frag frag-ambient" style="--delay: 0.6s; --from-x: 35px; --from-y: -25px">
+        <span class="frag-type">ambient</span> boundaries &middot; voice
       </div>
-      <div class="map-item">
-        <span class="map-icon">Mirror</span>
-        <span class="map-chip live">Live in demo</span>
-        <span class="map-desc">Compression pipeline — distills conversation into memory</span>
+      <div class="frag frag-knowledge" style="--delay: 1.0s; --from-x: 45px; --from-y: -15px">
+        <span class="frag-type">knowledge</span> domain expertise
       </div>
-      <div class="map-item">
-        <span class="map-icon">Lens</span>
-        <span class="map-chip partial">Partially represented</span>
-        <span class="map-desc">Read and extraction tool — recall queries use this path</span>
+      <div class="frag frag-wm" style="--delay: 1.5s; --from-x: -50px; --from-y: 10px; --final-opacity: 0.95">
+        <span class="frag-type">memory</span> current mood
+        <span class="decay-bar" style="--decay: 0.9"></span>
       </div>
-      <div class="map-item">
-        <span class="map-icon">Council</span>
-        <span class="map-chip separate">Separate project</span>
-        <span class="map-desc">Multi-perspective analysis — four sage agents</span>
+      <div class="frag frag-wm" style="--delay: 1.9s; --from-x: 45px; --from-y: 15px; --final-opacity: 0.4">
+        <span class="frag-type">memory</span> old observation
+        <span class="decay-bar" style="--decay: 0.3"></span>
       </div>
-      <div class="map-item">
-        <span class="map-icon">Compass</span>
-        <span class="map-chip live">Live in demo</span>
-        <span class="map-desc">Surfacing algorithm — scores and surfaces relevant memories by time and topic</span>
+      <div class="frag frag-surfaced" style="--delay: 2.5s; --from-x: 0px; --from-y: 35px; --final-opacity: 0.85">
+        <span class="frag-type">surfaced</span> recalled fragment
       </div>
-      <div class="map-item">
-        <span class="map-icon">Anvil</span>
-        <span class="map-chip parent">Parent system</span>
-        <span class="map-desc">Collaborative editing sessions</span>
+      <div class="frag frag-summary" style="--delay: 3.1s; --from-x: 30px; --from-y: 30px; --final-opacity: 0.7">
+        <span class="frag-type">summary</span> compressed history
       </div>
     </div>
   </div>
 
-  <p class="key-helper">Private demo access. Keys isolate sessions and token budgets per reviewer.</p>
+  <p class="key-helper">Private demo. Keys isolate sessions and token budgets per reviewer.</p>
 
   <form id="key-form" class="key-form">
     <input id="key-input" class="key-input" type="password"
