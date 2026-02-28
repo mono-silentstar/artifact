@@ -33,28 +33,31 @@ declare(strict_types=1);
   <div class="assembly">
     <p class="assembly-label">context window &mdash; assembled fresh every turn</p>
     <div class="assembly-window">
-      <div class="frag frag-ambient" style="--delay: 0.3s; --from-x: -40px; --from-y: -20px">
-        <span class="frag-type">ambient</span> personality &middot; tone
+      <div class="frag frag-static" style="--delay: 0.2s; --from-x: -35px; --from-y: -20px">
+        <span class="frag-type">self-state</span> what I know
       </div>
-      <div class="frag frag-ambient" style="--delay: 0.6s; --from-x: 35px; --from-y: -25px">
-        <span class="frag-type">ambient</span> boundaries &middot; voice
+      <div class="frag frag-summary" style="--delay: 0.6s; --from-x: 30px; --from-y: -25px; --final-opacity: 0.75">
+        <span class="frag-type">summaries</span> compressed history
       </div>
-      <div class="frag frag-knowledge" style="--delay: 1.0s; --from-x: 45px; --from-y: -15px">
-        <span class="frag-type">knowledge</span> domain expertise
-      </div>
-      <div class="frag frag-wm" style="--delay: 1.5s; --from-x: -50px; --from-y: 10px; --final-opacity: 0.95">
-        <span class="frag-type">memory</span> current mood
+      <div class="frag frag-wm" style="--delay: 1.1s; --from-x: -50px; --from-y: 5px; --final-opacity: 0.95">
+        <span class="frag-type">lingering</span> current feeling
         <span class="decay-bar" style="--decay: 0.9"></span>
       </div>
-      <div class="frag frag-wm" style="--delay: 1.9s; --from-x: 45px; --from-y: 15px; --final-opacity: 0.4">
-        <span class="frag-type">memory</span> old observation
-        <span class="decay-bar" style="--decay: 0.3"></span>
+      <div class="frag frag-wm" style="--delay: 1.5s; --from-x: 45px; --from-y: 10px; --final-opacity: 0.35">
+        <span class="frag-type">lingering</span> old thought
+        <span class="decay-bar" style="--decay: 0.25"></span>
       </div>
-      <div class="frag frag-surfaced" style="--delay: 2.5s; --from-x: 0px; --from-y: 35px; --final-opacity: 0.85">
-        <span class="frag-type">surfaced</span> recalled fragment
+      <div class="frag frag-recalled" style="--delay: 2.0s; --from-x: 40px; --from-y: 25px; --final-opacity: 0.85">
+        <span class="frag-type">recalled</span> crystal fragment
       </div>
-      <div class="frag frag-summary" style="--delay: 3.1s; --from-x: 30px; --from-y: 30px; --final-opacity: 0.7">
-        <span class="frag-type">summary</span> compressed history
+      <div class="frag frag-surfaced" style="--delay: 2.4s; --from-x: -40px; --from-y: 25px; --final-opacity: 0.8">
+        <span class="frag-type">surfaced</span> related memory
+      </div>
+      <div class="frag frag-conversation" style="--delay: 2.9s; --from-x: 0px; --from-y: 35px">
+        <span class="frag-type">recent</span> conversation &middot; FIFO
+      </div>
+      <div class="frag frag-hot" style="--delay: 3.4s; --from-x: 0px; --from-y: 30px">
+        <span class="frag-type">hot</span> your message
       </div>
     </div>
   </div>

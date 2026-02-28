@@ -143,14 +143,14 @@ html, body {
   letter-spacing: 0.04em;
 }
 
-.frag-ambient {
+.frag-static {
   --frag-color: #c4a882;
   --frag-bg: rgba(196, 168, 130, 0.08);
 }
 
-.frag-knowledge {
-  --frag-color: #d4cfc8;
-  --frag-bg: rgba(212, 207, 200, 0.06);
+.frag-summary {
+  --frag-color: #c89050;
+  --frag-bg: rgba(200, 144, 80, 0.06);
 }
 
 .frag-wm {
@@ -158,14 +158,25 @@ html, body {
   --frag-bg: rgba(90, 138, 90, 0.08);
 }
 
-.frag-surfaced {
+.frag-recalled {
   --frag-color: #8e94c8;
   --frag-bg: rgba(142, 148, 200, 0.08);
 }
 
-.frag-summary {
-  --frag-color: rgba(255, 255, 255, 0.35);
-  --frag-bg: rgba(255, 255, 255, 0.03);
+.frag-surfaced {
+  --frag-color: #9e8ec8;
+  --frag-bg: rgba(158, 142, 200, 0.08);
+}
+
+.frag-conversation {
+  --frag-color: #d4cfc8;
+  --frag-bg: rgba(212, 207, 200, 0.05);
+}
+
+.frag-hot {
+  --frag-color: #c4a882;
+  --frag-bg: rgba(196, 168, 130, 0.1);
+  border-style: solid;
 }
 
 .decay-bar {
