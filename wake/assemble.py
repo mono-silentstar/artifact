@@ -457,28 +457,6 @@ def _load_conversation(
     return selected
 
 
-def _format_recall_results(
-    results: list[RecallResult],
-    token_budget: int,
-) -> list[RecallResult]:
-    """Trim recall results to fit within budget."""
-    if not results:
-        return []
-
-    selected = []
-    remaining = token_budget
-
-    for result in results:
-        cost = _estimate_tokens(result.content)
-        for n in result.neighbors:
-            cost += _estimate_tokens(n.ambient)
-
-        if cost <= remaining:
-            selected.append(result)
-            remaining -= cost
-
-    return selected
-
 
 def assemble(
     config: WakeConfig,

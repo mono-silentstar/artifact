@@ -24,6 +24,7 @@ try {
                 'turn' => 0,
                 'working_memory' => [],
                 'events_count' => 0,
+                'summaries_count' => 0,
                 'pending_recall' => [],
                 'usage' => art_get_usage($keyId),
             ],

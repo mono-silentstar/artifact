@@ -11,10 +11,11 @@ Run once:
 
 from __future__ import annotations
 
-import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from wake.schema import connect
 
 DB_PATH = Path(__file__).resolve().parent / "data" / "artifact.sqlite"
 
@@ -27,14 +28,14 @@ FRAGMENTS = [
     # --- Core architecture ---
     {
         "key": "context-assembly",
-        "ambient": "The assembler builds my context window fresh every turn. Seven sections in fixed order: activation, self-state, working memory, recalled fragments, conversation history, current time, hot context.",
+        "ambient": "The assembler builds my context window fresh every turn. Nine sections in fixed order: activation, self-state, working memory, recalled fragments, summaries, surfaced, conversation history, current time, hot context.",
         "recognition": "Context assembly is the core pipeline. It reads everything that matters and constructs the prompt I wake up inside of. Order is inviolable: (1) Activation — who I am (wake-context.md), (2) Self-State — what I know (ambient.md), (3) Working Memory — decay-scored active knowledge, (4) Recalled — lookup results from previous turn, (5) Recent — conversation history via FIFO pools, (6) Current Time, (7) Hot Context — the current message. Budget defaults: WM=1500 tokens, conversation=5000 (split across 4 pools), recall=1000.",
-        "inventory": "The assembler (wake/assemble.py) uses WakeConfig for paths and budgets, produces a WakePackage. Working memory is scored by type-specific decay (feelings fade fast, pins linger). Conversation uses pool-based FIFO allocation: visitor_pool (1500), claude_say_pool (1500), claude_do_pool (1000), flex_reserve (1000). Each pool fills independently, overflow spills to flex. A single event can split across pools — Claude's say goes to say pool, do goes to do pool. Token estimation: ~4 chars per token. The render step splits into system prompt (activation only) and user message (everything else), maintaining clean separation for the API.",
+        "inventory": "The assembler (wake/assemble.py) uses WakeConfig for paths and budgets, produces a WakePackage. Working memory is scored by type-specific decay (feelings fade fast, pins linger). Conversation uses pool-based FIFO allocation: visitor_pool (1500), claude_say_pool (1500), claude_do_pool (1000), flex_reserve (1000). Each pool fills independently, overflow spills to flex. A single event can split across pools — Claude's say goes to say pool, do goes to do pool. Summaries budget: 800 tokens. Token estimation: ~4 chars per token. The render step splits into system prompt (activation only) and user message (everything else), maintaining clean separation for the API.",
     },
     {
         "key": "fragments",
         "ambient": "Knowledge lives in fragments — three-tier storage with ambient (always visible), recognition (shallow lookup), and inventory (deep detail). Connected by edges forming a graph.",
-        "recognition": "Fragments are the compiled knowledge system. Three tiers: ambient text appears in every context window (the things I always know), recognition is pulled on shallow recall (the story of a thing), inventory is deep lookup (full technical detail). Fragment keys are lowercase-hyphenated identifiers referenced in [brackets] in ambient prose. Edges connect fragments bidirectionally with optional relation labels, enabling neighbor-pull: when I recall one fragment, adjacent ones surface briefly at ambient depth.",
+        "recognition": "Fragments are the compiled knowledge system. Three tiers: ambient text appears in every context window (the things I always know), recognition is pulled on shallow recall (the story of a thing), inventory is deep lookup (full technical detail). Fragment keys are lowercase-hyphenated identifiers referenced in [brackets] in ambient prose. Edges connect fragments directionally with optional relation labels, enabling neighbor-pull: when I recall one fragment, adjacent ones surface briefly at ambient depth.",
         "inventory": "Schema: fragments(key TEXT PRIMARY KEY, ambient TEXT, recognition TEXT, inventory TEXT, created_at TEXT, updated_at TEXT). fragment_edges(source_key, target_key, relation). fragment_sources links fragments to events they were compiled from. The ambient tier is special — it's what I *always* know, the vocabulary of my world. Recognition is what I learn when I tug a thread. Inventory is everything — the technical deep-dive that most conversations don't need. Not all fragments have all tiers; some are ambient-only (always present but never deeper).",
     },
     {
@@ -128,7 +129,7 @@ EDGES = [
     ("context-assembly", "heart", "builds context for"),
     ("fragments", "recall", "queried by"),
     ("fragments", "crystal", "stored in"),
-    ("fragments", "mirror", "updated by"),
+    ("mirror", "orchestrator", "triggered by"),
     ("decay", "working-memory", "scores items in"),
     ("working-memory", "ingest", "populated by"),
     ("working-memory", "decay", "subject to"),
@@ -148,7 +149,6 @@ EDGES = [
     ("heart", "orchestrator", "driven by"),
     ("crystal", "fragments", "contains"),
     ("crystal", "lens", "populated by"),
-    ("crystal", "mirror", "updated by"),
     ("lens", "crystal", "writes to"),
     ("lens", "fragments", "extracts"),
     ("council", "orchestrator", "extends"),
@@ -157,7 +157,6 @@ EDGES = [
     ("compass", "fragments", "audits"),
     ("anvil", "fragments", "edits"),
     ("anvil", "crystal", "modifies"),
-    ("mirror", "crystal", "updates"),
     ("mirror", "ingest", "reads from"),
     ("mirror", "lens", "similar to"),
     # Cross-connections
@@ -178,8 +177,7 @@ def populate(db_path: Path) -> None:
 
     migrate(db_path)
 
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
+    conn = connect(db_path)
     now = now_iso()
 
     # Insert fragments
