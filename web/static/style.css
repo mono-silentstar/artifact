@@ -207,6 +207,215 @@ html, body {
   50% { transform: translateY(-3px); }
 }
 
+/* Feature cards */
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 420px;
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+.feature {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--feature-color);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  opacity: 0;
+  animation: fade-up 0.6s ease-out forwards;
+  text-align: left;
+}
+
+.feature:nth-child(1) { animation-delay: 4.0s; }
+.feature:nth-child(2) { animation-delay: 4.3s; }
+.feature:nth-child(3) { animation-delay: 4.6s; }
+
+.feature:hover {
+  background: var(--surface-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+  border-left-color: var(--feature-color);
+}
+
+.feature-mirror { --feature-color: #c89050; }
+.feature-decay { --feature-color: #7ab07a; }
+.feature-compass { --feature-color: #9e8ec8; }
+
+.feature-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.feature-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--feature-color);
+  letter-spacing: 0.03em;
+  margin-bottom: 0.15rem;
+}
+
+.feature-teaser {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.feature-toggle {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 300;
+  line-height: 1;
+  transition: transform 0.3s ease, color 0.2s;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.feature.open .feature-toggle {
+  transform: rotate(45deg);
+  color: var(--feature-color);
+}
+
+.feature-detail {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease 0.05s;
+}
+
+.feature.open .feature-detail {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.feature-body {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  line-height: 1.65;
+  margin-top: 0.6rem;
+}
+
+.feature-body + .feature-body {
+  margin-top: 0.4rem;
+}
+
+/* Pipeline visual (Mirror) */
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0.5rem 0 0;
+}
+
+.pipeline-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--feature-color);
+  color: var(--feature-color);
+  opacity: 0.35;
+  transition: opacity 0.3s, background 0.3s;
+}
+
+.feature:hover .pipeline-node {
+  animation: pipeline-pulse 1.8s ease-in-out infinite;
+}
+
+.feature:hover .pipeline-node:nth-child(1) { animation-delay: 0s; }
+.feature:hover .pipeline-node:nth-child(3) { animation-delay: 0.4s; }
+.feature:hover .pipeline-node:nth-child(5) { animation-delay: 0.8s; }
+
+.feature.open .pipeline-node {
+  opacity: 0.7;
+}
+
+@keyframes pipeline-pulse {
+  0%, 100% { opacity: 0.35; }
+  25%, 45% { opacity: 1; background: rgba(200, 144, 80, 0.15); }
+}
+
+.pipeline-line {
+  width: 16px;
+  height: 1px;
+  background: var(--feature-color);
+  opacity: 0.2;
+}
+
+.feature:hover .pipeline-line {
+  opacity: 0.4;
+}
+
+/* Decay gradient visual */
+
+.decay-gradient {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0.5rem 0 0;
+}
+
+.decay-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.decay-label {
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  width: 3rem;
+  text-align: right;
+  letter-spacing: 0.02em;
+}
+
+.decay-fill {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--feature-color);
+  width: 0;
+  max-width: 100px;
+  transition: width 0.8s ease-out;
+}
+
+.feature:hover .decay-fill,
+.feature.open .decay-fill {
+  width: var(--fill);
+}
+
+.decay-time {
+  font-size: 0.55rem;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.4s ease 0.6s;
+}
+
+.feature:hover .decay-time,
+.feature.open .decay-time {
+  opacity: 0.7;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Key form */
 
 .key-form {
@@ -713,6 +922,16 @@ html, body {
   .assembly-window {
     max-width: 300px;
     padding: 1rem;
+  }
+
+  .features {
+    max-width: 300px;
+  }
+
+  .pipeline-node {
+    width: 20px;
+    height: 20px;
+    font-size: 0.5rem;
   }
 
   .context-panel {

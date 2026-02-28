@@ -13,7 +13,7 @@ declare(strict_types=1);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/style.css?v=2">
+  <link rel="stylesheet" href="static/style.css?v=3">
 </head>
 <body>
 
@@ -62,7 +62,116 @@ declare(strict_types=1);
     </div>
   </div>
 
+  <div class="features">
+    <div class="feature feature-mirror">
+      <div class="feature-header">
+        <div>
+          <h3 class="feature-title">mirror</h3>
+          <p class="feature-teaser">Three-model pipeline. Rolling compression.</p>
+        </div>
+        <span class="feature-toggle">+</span>
+      </div>
+      <div class="pipeline">
+        <span class="pipeline-node">H</span>
+        <span class="pipeline-line"></span>
+        <span class="pipeline-node">S</span>
+        <span class="pipeline-line"></span>
+        <span class="pipeline-node">O</span>
+      </div>
+      <div class="feature-detail">
+        <p class="feature-body">
+          Haiku strips formatting and noise. If the conversation is action-heavy
+          (DO-density &gt; 40%), Sonnet compresses the action passages first.
+          Then Opus writes a summary and suggests working memory tags &mdash;
+          pins, patterns, and descriptions that should persist.
+        </p>
+        <p class="feature-body">
+          Each new summary folds in the previous one. Generation 0 covers the
+          first batch; generation 5 covers the entire conversation. The most
+          recent summary always carries everything. Pipeline fires automatically
+          every ~1500 conversation tokens.
+        </p>
+      </div>
+    </div>
+
+    <div class="feature feature-decay">
+      <div class="feature-header">
+        <div>
+          <h3 class="feature-title">decay</h3>
+          <p class="feature-teaser">Nine types, two axes, pressure-driven.</p>
+        </div>
+        <span class="feature-toggle">+</span>
+      </div>
+      <div class="decay-gradient">
+        <div class="decay-item">
+          <span class="decay-label">feeling</span>
+          <span class="decay-fill" style="--fill: 12%"></span>
+          <span class="decay-time">~2h</span>
+        </div>
+        <div class="decay-item">
+          <span class="decay-label">thought</span>
+          <span class="decay-fill" style="--fill: 30%"></span>
+          <span class="decay-time">~12h</span>
+        </div>
+        <div class="decay-item">
+          <span class="decay-label">pattern</span>
+          <span class="decay-fill" style="--fill: 65%"></span>
+          <span class="decay-time">~1w</span>
+        </div>
+        <div class="decay-item">
+          <span class="decay-label">pin</span>
+          <span class="decay-fill" style="--fill: 92%"></span>
+          <span class="decay-time">~2w</span>
+        </div>
+      </div>
+      <div class="feature-detail">
+        <p class="feature-body">
+          Each memory type decays on two axes &mdash; hours elapsed and turns
+          elapsed &mdash; combined multiplicatively. Feelings fade in ~2 hours
+          or 3 turns. Thoughts last 12 hours or 8 turns. Pins hold for 2 weeks
+          or 100 turns. Secrets never fade.
+        </p>
+        <p class="feature-body">
+          Timed plans use a submersion curve: spike when created, drop to
+          near-zero, then resurface as the due date approaches. When working
+          memory is near capacity, conversation history decays faster &mdash;
+          a pressure mechanic that prioritizes what you're actively holding.
+        </p>
+      </div>
+    </div>
+
+    <div class="feature feature-compass">
+      <div class="feature-header">
+        <div>
+          <h3 class="feature-title">compass</h3>
+          <p class="feature-teaser">Time + topic scoring, every turn.</p>
+        </div>
+        <span class="feature-toggle">+</span>
+      </div>
+      <div class="feature-detail">
+        <p class="feature-body">
+          Every turn, all active working memory items are scored on two axes:
+          time urgency (proximity to due date) and topic relevance (keyword
+          overlap with the current conversation). Either axis alone is
+          sufficient &mdash; max wins.
+        </p>
+        <p class="feature-body">
+          Items scoring above 0.15 that aren't already in Lingering fill the
+          remaining token budget, highest scores first. Recall results from
+          the crystal graph get priority. Blocked items surface in shallow
+          form &mdash; just the subject and what's blocking them.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <p class="key-helper">Private demo. Keys isolate sessions and token budgets per reviewer.</p>
+
+  <script>
+  document.querySelectorAll('.feature').forEach(function(card) {
+    card.addEventListener('click', function() { card.classList.toggle('open'); });
+  });
+  </script>
 
   <form id="key-form" class="key-form">
     <input id="key-input" class="key-input" type="password"
