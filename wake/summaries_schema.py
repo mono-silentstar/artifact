@@ -56,9 +56,11 @@ def migrate_summaries(db_path: Path) -> None:
 
 def _migrate_v2(conn: sqlite3.Connection) -> None:
     """Add generation column — rolling summary compression counter."""
-    conn.execute(
-        "ALTER TABLE summaries ADD COLUMN generation INTEGER DEFAULT 0"
-    )
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(summaries)")}
+    if "generation" not in cols:
+        conn.execute(
+            "ALTER TABLE summaries ADD COLUMN generation INTEGER DEFAULT 0"
+        )
 
 
 def _create_v1(conn: sqlite3.Connection) -> None:

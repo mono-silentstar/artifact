@@ -14,9 +14,12 @@ Pipeline:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from wake.assemble import assemble, render_system, render_user, WakeConfig
 from wake.recall import recall, RecallResult, NeighborResult
@@ -72,18 +75,22 @@ def _load_recall_results(db_path: Path) -> list[RecallResult]:
         ).fetchone()
         if not row:
             return []
-        data = json.loads(row["value"])
-        results = []
-        for item in data:
-            neighbors = [
-                NeighborResult(key=n["key"], ambient=n["ambient"], relation=n["relation"])
-                for n in item.get("neighbors", [])
-            ]
-            results.append(RecallResult(
-                key=item["key"], content=item["content"],
-                depth=item["depth"], neighbors=neighbors,
-            ))
-        return results
+        try:
+            data = json.loads(row["value"])
+            results = []
+            for item in data:
+                neighbors = [
+                    NeighborResult(key=n["key"], ambient=n["ambient"], relation=n["relation"])
+                    for n in item.get("neighbors", [])
+                ]
+                results.append(RecallResult(
+                    key=item["key"], content=item["content"],
+                    depth=item["depth"], neighbors=neighbors,
+                ))
+            return results
+        except Exception:
+            logger.exception("Failed to parse pending recall results")
+            return []
     finally:
         conn.close()
 

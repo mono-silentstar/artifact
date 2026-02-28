@@ -204,10 +204,13 @@ def _load_summaries(
         return []
 
     try:
-        row = sum_conn.execute("""
-            SELECT content FROM summaries
-            ORDER BY id DESC LIMIT 1
-        """).fetchone()
+        try:
+            row = sum_conn.execute("""
+                SELECT content FROM summaries
+                ORDER BY id DESC LIMIT 1
+            """).fetchone()
+        except sqlite3.OperationalError:
+            return []
 
         if not row:
             return []
@@ -216,7 +219,7 @@ def _load_summaries(
         tokens = _estimate_tokens(content)
         if tokens <= token_budget:
             return [content]
-        return []
+        return [content[:token_budget * CHARS_PER_TOKEN]]
     finally:
         sum_conn.close()
 
