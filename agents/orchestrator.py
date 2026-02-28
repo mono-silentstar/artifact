@@ -44,6 +44,7 @@ class TurnConfig:
     wake_context_path: Path
     ambient_path: Path
     fragment_db_path: Path | None = None
+    summaries_path: Path | None = None
     claude_config: ClaudeConfig = field(default_factory=ClaudeConfig)
 
 
@@ -139,6 +140,7 @@ def turn(
         db_path=config.db_path,
         wake_context_path=config.wake_context_path,
         ambient_path=config.ambient_path,
+        summaries_path=config.summaries_path,
     )
 
     hot = f"visitor: {message}"

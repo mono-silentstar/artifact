@@ -53,12 +53,29 @@ try {
     )->fetch(PDO::FETCH_ASSOC);
     $pendingRecall = $recallRow ? json_decode($recallRow['value'], true) : [];
 
+    // Mirror summaries count (from per-session summaries.sqlite)
+    $summariesCount = 0;
+    $sessionDir = dirname($sessionDb);
+    $summariesDb = $sessionDir . '/summaries.sqlite';
+    if (is_file($summariesDb)) {
+        try {
+            $sumPdo = new PDO('sqlite:' . $summariesDb);
+            $sumPdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $summariesCount = (int)$sumPdo->query(
+                "SELECT COUNT(*) FROM summaries WHERE level = 'L0'"
+            )->fetchColumn();
+        } catch (Throwable $e) {
+            // summaries.sqlite may not have schema yet — ignore
+        }
+    }
+
     art_json_response(200, [
         'ok' => true,
         'context' => [
             'turn' => $turn,
             'working_memory' => $wmRows ?: [],
             'events_count' => $eventsCount,
+            'summaries_count' => $summariesCount,
             'pending_recall' => is_array($pendingRecall) ? $pendingRecall : [],
             'usage' => art_get_usage($keyId),
         ],

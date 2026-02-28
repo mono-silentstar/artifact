@@ -62,9 +62,14 @@ declare(strict_types=1);
         <span class="map-desc">Conversational instance — the AI you're talking to</span>
       </div>
       <div class="map-item">
-        <span class="map-icon">Gem</span>
+        <span class="map-icon">Crystal</span>
         <span class="map-chip live">Live in demo</span>
         <span class="map-desc">Compiled knowledge store — fragments with three depth tiers</span>
+      </div>
+      <div class="map-item">
+        <span class="map-icon">Mirror</span>
+        <span class="map-chip live">Live in demo</span>
+        <span class="map-desc">Compression pipeline — distills conversation into memory</span>
       </div>
       <div class="map-item">
         <span class="map-icon">Lens</span>
@@ -72,19 +77,14 @@ declare(strict_types=1);
         <span class="map-desc">Read and extraction tool — recall queries use this path</span>
       </div>
       <div class="map-item">
-        <span class="map-icon">Loom</span>
-        <span class="map-chip parent">Parent system</span>
-        <span class="map-desc">Multi-agent analysis pipeline</span>
-      </div>
-      <div class="map-item">
-        <span class="map-icon">Mirror</span>
-        <span class="map-chip parent">Parent system</span>
-        <span class="map-desc">Compression pipeline — distills conversation into knowledge</span>
+        <span class="map-icon">Council</span>
+        <span class="map-chip separate">Separate project</span>
+        <span class="map-desc">Multi-perspective analysis — four sage agents</span>
       </div>
       <div class="map-item">
         <span class="map-icon">Compass</span>
-        <span class="map-chip parent">Parent system</span>
-        <span class="map-desc">Autonomous planning system</span>
+        <span class="map-chip live">Live in demo</span>
+        <span class="map-desc">Surfacing algorithm — scores and surfaces relevant memories by time and topic</span>
       </div>
       <div class="map-item">
         <span class="map-icon">Anvil</span>

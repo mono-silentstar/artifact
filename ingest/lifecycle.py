@@ -83,6 +83,9 @@ def ingest(
             if span.modifier == "drop":
                 dropped = _drop_pin(conn, span, now)
                 wm_resolved.extend(dropped)
+            elif span.modifier in ("resolve", "cancel"):
+                resolved = _resolve_plan(conn, span, now)
+                wm_resolved.extend(resolved)
             else:
                 created = _create_wm_item(
                     conn, event_id, span, now, _get_turn(conn),
@@ -197,6 +200,52 @@ def _drop_pin(
     conn.execute(
         "UPDATE working_memory SET status = 'dropped', resolved_at = ? WHERE id = ?",
         (now, best_id),
+    )
+    return [best_id]
+
+
+def _resolve_plan(
+    conn: sqlite3.Connection,
+    span: TaggedSpan,
+    now: str,
+) -> list[int]:
+    """Find and resolve/cancel the best-matching active plan."""
+    status = "resolved" if span.modifier == "resolve" else "dropped"
+    query = span.content
+
+    if not query or not query.strip():
+        # No content — resolve the most recent active plan
+        row = conn.execute(
+            "SELECT id FROM working_memory WHERE type = 'plan' AND status = 'active' ORDER BY created_at DESC LIMIT 1",
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE working_memory SET status = ?, resolved_at = ? WHERE id = ?",
+                (status, now, row["id"]),
+            )
+            return [row["id"]]
+        return []
+
+    rows = conn.execute(
+        "SELECT id, content, subject FROM working_memory WHERE type = 'plan' AND status = 'active'",
+    ).fetchall()
+
+    if not rows:
+        return []
+
+    scored = [
+        (row["id"], _fuzzy_match(query, (row["subject"] or "") + " " + row["content"]))
+        for row in rows
+    ]
+    scored.sort(key=lambda x: x[1], reverse=True)
+
+    best_id, best_score = scored[0]
+    if best_score < 0.15:
+        return []
+
+    conn.execute(
+        "UPDATE working_memory SET status = ?, resolved_at = ? WHERE id = ?",
+        (status, now, best_id),
     )
     return [best_id]
 

@@ -15,10 +15,10 @@ The system has several components, each a fragment I can recall:
 - [ingest] — tag parsing pipeline for structured content
 - [design-principles] — the core philosophy behind the system
 - [heart] — the conversational instance (that's me)
-- [gem] — the compiled knowledge store
+- [crystal] — the compiled knowledge store
 - [lens] — the read/extraction tool
-- [loom] — multi-agent analysis pipeline
-- [compass] — autonomous planning system
+- [council] — multi-perspective analysis (separate project)
+- [compass] — surfacing algorithm — scores and surfaces relevant memories
 - [anvil] — collaborative editing sessions
 - [mirror] — the compression pipeline
 

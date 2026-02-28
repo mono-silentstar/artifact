@@ -36,14 +36,27 @@ class ParsedMessage:
     raw: str = ""
 
 
-# Lifecycle modifiers
+# Lifecycle modifiers — words at the start of tag content that change behavior
+PLAN_RESOLVE_WORDS = frozenset({"done", "complete", "finished"})
+PLAN_CANCEL_WORDS = frozenset({"cancel", "skip", "drop", "abandon"})
 PIN_DROP_WORDS = frozenset({"drop", "release", "clear", "remove"})
 
 
 def _extract_modifier(tag: str, content: str) -> tuple[str | None, str]:
-    """Check if content starts with a lifecycle modifier word."""
+    """Check if content starts with a lifecycle modifier word.
+
+    Returns (modifier, remaining_content).
+    """
     stripped = content.strip()
     first_word = stripped.split(None, 1)[0].lower() if stripped else ""
+
+    if tag == "plan":
+        if first_word in PLAN_RESOLVE_WORDS:
+            rest = stripped.split(None, 1)[1] if " " in stripped else ""
+            return "resolve", rest.strip()
+        if first_word in PLAN_CANCEL_WORDS:
+            rest = stripped.split(None, 1)[1] if " " in stripped else ""
+            return "cancel", rest.strip()
 
     if tag == "pin":
         if first_word in PIN_DROP_WORDS:

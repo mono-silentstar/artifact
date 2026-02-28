@@ -49,7 +49,7 @@ from .schema import connect as _connect
 def recall(
     key: str,
     db_path: str | Path,
-    deep: bool = False,
+    deep: bool = True,
 ) -> RecallResult | None:
     """
     Look up a fragment by exact key.
@@ -112,7 +112,7 @@ def recall(
 def recall_multi(
     keys: list[str],
     db_path: str | Path,
-    deep: bool = False,
+    deep: bool = True,
 ) -> list[RecallResult]:
     """
     Look up multiple fragments. Deduplicates neighbors —
@@ -137,4 +137,207 @@ def recall_multi(
             seen_keys.add(n.key)
 
     return results
+
+
+# --- Plans lookup ---
+
+
+@dataclass
+class PlanSummary:
+    """A working memory item, surfaced by plans()."""
+    id: int
+    type: str
+    content: str
+    subject: str | None
+    actor: str | None
+    status: str
+    due: datetime | None
+    created_at: datetime
+    refreshed_at: datetime
+    phase: str                  # "submerged", "approaching", "overdue",
+                                # "open-ended", "active", "grace"
+    related_keys: list[str] = field(default_factory=list)
+
+
+def _classify_plan_phase(
+    now: datetime,
+    due: datetime | None,
+    created_at: datetime,
+) -> str:
+    """Determine what phase a timed plan is in."""
+    if due is None:
+        return "open-ended"
+
+    hours_until_due = (due - now).total_seconds() / 3600.0
+
+    if hours_until_due < -24:
+        return "overdue"
+    if hours_until_due < 0:
+        return "grace"
+    if hours_until_due < 48:
+        return "approaching"
+
+    hours_since_creation = (now - created_at).total_seconds() / 3600.0
+    if hours_since_creation < 4:
+        return "active"     # still in creation spike
+
+    return "submerged"
+
+
+def plans(
+    db_path: str | Path,
+    topic: str | None = None,
+    when: str | None = None,
+) -> list[PlanSummary]:
+    """
+    Look up working memory items. Bypasses submersion — shows everything
+    active regardless of current decay score.
+
+    plans()                      -> all active items, sorted by due date
+    plans(topic="body-training") -> items linked to a fragment key or
+                                    matching subject/content
+    plans(when="next tuesday")   -> items with due dates in a time window
+
+    Returns PlanSummary objects with phase classification.
+    """
+    conn = _connect(db_path)
+    now = datetime.now(timezone.utc)
+
+    try:
+        if topic:
+            return _plans_by_topic(conn, now, topic)
+        if when:
+            return _plans_by_time(conn, now, when)
+        return _plans_all(conn, now)
+    finally:
+        conn.close()
+
+
+def _row_to_summary(row: sqlite3.Row, now: datetime, conn: sqlite3.Connection) -> PlanSummary:
+    """Convert a working_memory row to a PlanSummary."""
+    created = datetime.fromisoformat(row["created_at"]).replace(tzinfo=timezone.utc)
+    refreshed = datetime.fromisoformat(row["refreshed_at"]).replace(tzinfo=timezone.utc)
+    due = None
+    if row["due"]:
+        due = datetime.fromisoformat(row["due"]).replace(tzinfo=timezone.utc)
+
+    # Get related fragment keys
+    refs = conn.execute(
+        "SELECT fragment_key FROM working_memory_refs WHERE wm_id = ?",
+        (row["id"],),
+    ).fetchall()
+    related_keys = [r["fragment_key"] for r in refs]
+
+    return PlanSummary(
+        id=row["id"],
+        type=row["type"],
+        content=row["content"],
+        subject=row["subject"],
+        actor=row["actor"],
+        status=row["status"],
+        due=due,
+        created_at=created,
+        refreshed_at=refreshed,
+        phase=_classify_plan_phase(now, due, created),
+        related_keys=related_keys,
+    )
+
+
+def _plans_all(conn: sqlite3.Connection, now: datetime) -> list[PlanSummary]:
+    """All active working memory items, due-dated first (sorted by due),
+    then open-ended (sorted by created_at)."""
+    rows = conn.execute("""
+        SELECT * FROM working_memory
+        WHERE status = 'active'
+        ORDER BY
+            CASE WHEN due IS NOT NULL THEN 0 ELSE 1 END,
+            due ASC,
+            created_at DESC
+    """).fetchall()
+
+    return [_row_to_summary(r, now, conn) for r in rows]
+
+
+def _plans_by_topic(
+    conn: sqlite3.Connection,
+    now: datetime,
+    topic: str,
+) -> list[PlanSummary]:
+    """Items linked to a fragment key, or matching subject/content."""
+    # First: check working_memory_refs for fragment key matches
+    by_ref = conn.execute("""
+        SELECT wm.* FROM working_memory wm
+        INNER JOIN working_memory_refs ref ON ref.wm_id = wm.id
+        WHERE wm.status = 'active'
+          AND ref.fragment_key = ?
+    """, (topic,)).fetchall()
+
+    ref_ids = {r["id"] for r in by_ref}
+
+    # Second: text match on subject and content
+    by_text = conn.execute("""
+        SELECT * FROM working_memory
+        WHERE status = 'active'
+          AND (subject LIKE ? OR content LIKE ?)
+    """, (f"%{topic}%", f"%{topic}%")).fetchall()
+
+    # Merge, dedup
+    all_rows = list(by_ref)
+    for r in by_text:
+        if r["id"] not in ref_ids:
+            all_rows.append(r)
+
+    return [_row_to_summary(r, now, conn) for r in all_rows]
+
+
+def _plans_by_time(
+    conn: sqlite3.Connection,
+    now: datetime,
+    when: str,
+) -> list[PlanSummary]:
+    """Items with due dates matching a time expression."""
+    target = _parse_time_expression(when, now)
+
+    if target is None:
+        # Fallback: text search
+        rows = conn.execute("""
+            SELECT * FROM working_memory
+            WHERE status = 'active'
+              AND (content LIKE ? OR due LIKE ?)
+        """, (f"%{when}%", f"%{when}%")).fetchall()
+        return [_row_to_summary(r, now, conn) for r in rows]
+
+    # Search within a day window around the target
+    window_start = target - timedelta(hours=12)
+    window_end = target + timedelta(hours=12)
+
+    rows = conn.execute("""
+        SELECT * FROM working_memory
+        WHERE status = 'active'
+          AND due IS NOT NULL
+          AND due >= ? AND due <= ?
+        ORDER BY due ASC
+    """, (window_start.isoformat(), window_end.isoformat())).fetchall()
+
+    return [_row_to_summary(r, now, conn) for r in rows]
+
+
+def _parse_time_expression(when: str, now: datetime) -> datetime | None:
+    """Parse a natural language time expression into a datetime.
+    Uses dateparser if available, otherwise returns None."""
+    try:
+        import dateparser
+        result = dateparser.parse(
+            when,
+            settings={
+                "RELATIVE_BASE": now.replace(tzinfo=None),
+                "PREFER_DATES_FROM": "future",
+            },
+        )
+        if result:
+            return result.replace(tzinfo=timezone.utc)
+    except ImportError:
+        pass
+
+    return None
 

@@ -41,6 +41,7 @@ from .decay import (
     select_within_budget,
 )
 from .recall import RecallResult, NeighborResult
+from .compass import surface as compass_surface, CompassResult
 from .schema import connect, DISPLAY_TAGS, ALL_TAGS, IDENTITY_TAGS
 
 
@@ -48,6 +49,7 @@ from .schema import connect, DISPLAY_TAGS, ALL_TAGS, IDENTITY_TAGS
 # Activation and self-state are full files, always included.
 DEFAULT_WM_BUDGET = 1500           # working memory hard cap
 DEFAULT_RECALL_BUDGET = 1000       # recall results from previous turn
+DEFAULT_SUMMARIES_BUDGET = 800     # compressed history from the Mirror
 
 # Conversation pool budgets — FIFO allocation, most recent first.
 # Each pool fills independently. Overflow spills to flex reserve.
@@ -106,6 +108,8 @@ class WakeConfig:
     wm_budget: int = DEFAULT_WM_BUDGET
     conversation: ConversationBudget = field(default_factory=ConversationBudget)
     recall_budget: int = DEFAULT_RECALL_BUDGET
+    summaries_path: Path | None = None
+    summaries_budget: int = DEFAULT_SUMMARIES_BUDGET
     decay_params: DecayParams = field(default_factory=DecayParams)
 
 
@@ -114,8 +118,10 @@ class WakePackage:
     """The assembled context window. Ready to render."""
     activation: str                           # who I am
     self_state: str                           # what I know
+    summaries: list[str]                      # compressed history from the Mirror
     working_memory: list[ContextFragment]     # active knowledge
     recall_results: list[RecallResult]        # lookups from previous turn
+    surfaced: list[str]                       # Compass-surfaced WM items
     conversation: list[ContextFragment]       # recent messages
     current_time: str                         # right now, human-readable
     hot_context: str                          # Current visitor message
@@ -179,20 +185,58 @@ def _extract_display_content(raw: str, actor: str) -> str | None:
 
 
 
+def _load_summaries(
+    summaries_path: Path,
+    token_budget: int,
+) -> list[str]:
+    """Load the latest rolling summary from the Mirror, within budget.
+
+    Rolling model: only the most recent summary matters — it already
+    contains compressed versions of all prior summaries.
+    """
+    if not summaries_path.exists():
+        return []
+
+    try:
+        from .summaries_schema import connect_summaries
+        sum_conn = connect_summaries(summaries_path)
+    except Exception:
+        return []
+
+    try:
+        row = sum_conn.execute("""
+            SELECT content FROM summaries
+            ORDER BY id DESC LIMIT 1
+        """).fetchone()
+
+        if not row:
+            return []
+
+        content = row["content"]
+        tokens = _estimate_tokens(content)
+        if tokens <= token_budget:
+            return [content]
+        return []
+    finally:
+        sum_conn.close()
+
+
 def _load_working_memory(
     conn: sqlite3.Connection,
     now: datetime,
     current_turn: int,
     token_budget: int,
     params: DecayParams,
-) -> tuple[list[ContextFragment], float]:
+    preloaded_rows: list[sqlite3.Row] | None = None,
+) -> tuple[list[ContextFragment], float, list[sqlite3.Row]]:
     """
     Load active working memory items, scored by type-specific decay.
 
-    Returns (selected_fragments, fill_ratio).
+    Returns (selected_fragments, fill_ratio, all_wm_rows).
     Fill ratio is informational — how full the WM budget is.
+    all_wm_rows is returned for reuse by Compass (avoids double query).
     """
-    rows = conn.execute("""
+    rows = preloaded_rows or conn.execute("""
         SELECT id, type, content, subject, actor, due, turn,
                created_at, refreshed_at
         FROM working_memory
@@ -263,7 +307,7 @@ def _load_working_memory(
     used_tokens = sum(f.token_estimate for f in selected)
     fill_ratio = used_tokens / token_budget if token_budget > 0 else 0.0
 
-    return selected, fill_ratio
+    return selected, fill_ratio, rows
 
 
 def _load_conversation(
@@ -454,18 +498,39 @@ def assemble(
         # 2. Self-state — what I know
         self_state = _load_file(config.ambient_path)
 
+        # Summaries — compressed history from the Mirror
+        sum_path = config.summaries_path or config.db_path.parent / "summaries.sqlite"
+        summaries = _load_summaries(sum_path, config.summaries_budget)
+
         # Working memory — decay-scored within hard cap
-        working_memory, _ = _load_working_memory(
+        working_memory, _, all_wm_rows = _load_working_memory(
             conn, now, current_turn, config.wm_budget, config.decay_params
         )
 
         # Conversation — FIFO pool allocation
         conversation = _load_conversation(conn, config.conversation)
 
-        # Recall results from previous turn
-        trimmed_recall = _format_recall_results(
-            recall_results or [], config.recall_budget
+        # IDs already in Lingering (working_memory section)
+        lingering_ids = set()
+        for frag in working_memory:
+            if frag.source.startswith("wm:"):
+                try:
+                    lingering_ids.add(int(frag.source.split(":")[1]))
+                except (IndexError, ValueError):
+                    pass
+
+        compass_result = compass_surface(
+            all_wm_rows=all_wm_rows,
+            lingering_ids=lingering_ids,
+            hot_context=hot_context,
+            conversation=conversation,
+            recall_results=recall_results or [],
+            conn=conn,
+            now=now,
+            budget=config.recall_budget,
         )
+
+        surfaced_lines = [item.content for item in compass_result.surfaced]
 
         # Current time
         current_time = _format_time(now)
@@ -473,8 +538,10 @@ def assemble(
         return WakePackage(
             activation=activation,
             self_state=self_state,
+            summaries=summaries,
             working_memory=working_memory,
-            recall_results=trimmed_recall,
+            recall_results=compass_result.recall_results,
+            surfaced=surfaced_lines,
             conversation=conversation,
             current_time=current_time,
             hot_context=hot_context,
@@ -522,6 +589,10 @@ def render_user(package: WakePackage) -> str:
     if package.self_state:
         sections.append(package.self_state)
 
+    # Summaries — compressed history from the Mirror
+    if package.summaries:
+        sections.append("Remembered:\n" + "\n\n".join(package.summaries))
+
     # Working memory — what I'm holding
     if package.working_memory:
         wm_lines = [f.content for f in package.working_memory]
@@ -536,6 +607,10 @@ def render_user(package: WakePackage) -> str:
                 relation = f" ({n.relation})" if n.relation else ""
                 recall_parts.append(f"  nearby — [{n.key}]{relation}: {n.ambient}")
         sections.append("Recalled:\n" + "\n".join(recall_parts))
+
+    # Compass-surfaced items
+    if package.surfaced:
+        sections.append("Surfaced:\n" + "\n".join(package.surfaced))
 
     # Recent conversation
     if package.conversation:

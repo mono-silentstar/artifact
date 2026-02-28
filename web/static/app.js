@@ -440,6 +440,15 @@
         html += `</div>`;
       }
 
+      // Mirror summaries
+      html += `<div class="ctx-section"><h3>Mirror Summaries</h3>`;
+      if (ctx.summaries_count && ctx.summaries_count > 0) {
+        html += `<p>${ctx.summaries_count} compressed ${ctx.summaries_count === 1 ? 'summary' : 'summaries'}</p>`;
+      } else {
+        html += '<p class="empty">No summaries yet. The Mirror compresses conversation history automatically.</p>';
+      }
+      html += '</div>';
+
       // Working memory
       html += `<div class="ctx-section"><h3>Active Working Memory</h3>`;
       if (ctx.working_memory && ctx.working_memory.length > 0) {

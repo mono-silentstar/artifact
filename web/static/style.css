@@ -254,6 +254,11 @@ html, body {
   color: #c89050;
 }
 
+.map-chip.separate {
+  background: rgba(130, 140, 200, 0.15);
+  color: #8e94c8;
+}
+
 .map-chip.parent {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-dim);

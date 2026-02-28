@@ -47,6 +47,8 @@ class CronConfig:
     claude_model: str | None = None
     claude_api_key: str | None = None
     keys_db_path: Path | None = None
+    summaries_path: Path | None = None
+    prompt_dir: Path | None = None
     verbose: bool = True
 
 
@@ -79,6 +81,8 @@ def load_config(path: Path) -> CronConfig:
         claude_model=raw.get("claude_model"),
         claude_api_key=raw.get("claude_api_key"),
         keys_db_path=resolve(raw.get("keys_db_path", ""), REPO_ROOT / "data" / "keys.sqlite"),
+        summaries_path=resolve(raw.get("summaries_path", ""), Path("")) if raw.get("summaries_path") else None,
+        prompt_dir=resolve(raw.get("prompt_dir", ""), REPO_ROOT / "mdfiles" / "claude"),
         verbose=bool(raw.get("verbose", True)),
     )
 
@@ -308,11 +312,15 @@ def process_job(cfg: CronConfig, job: dict) -> None:
     if cfg.claude_api_key:
         cc.api_key = cfg.claude_api_key
 
+    # Summaries path — per-session, derived from session dir
+    session_summaries = session_db.parent / "summaries.sqlite"
+
     turn_config = TurnConfig(
         db_path=session_db,
         wake_context_path=cfg.wake_context_path,
         ambient_path=cfg.ambient_path,
         fragment_db_path=cfg.fragment_db_path,
+        summaries_path=session_summaries,
         claude_config=cc,
     )
 
@@ -364,7 +372,54 @@ def process_job(cfg: CronConfig, job: dict) -> None:
         except Exception as e:
             log(f"warning: append_history failed for {job_id}: {e}")
 
+    # Run Mirror compression if trigger conditions met (non-critical)
+    try:
+        maybe_run_mirror(cfg, session_db)
+    except Exception as e:
+        log(f"warning: mirror failed for {job_id}: {e}")
+
     log(f"job {job_id} done (turn {result.turn}, {len(display)} display spans)")
+
+
+def maybe_run_mirror(cfg: CronConfig, session_db: Path) -> None:
+    """Check if the Mirror should fire, and run it if so.
+
+    Never raises — Mirror failures must not break conversation processing.
+    """
+    try:
+        from agents.mirror import MirrorAgent, should_fire_mirror
+        from wake.schema import connect
+        from wake.summaries_schema import connect_summaries, migrate_summaries
+
+        mem_conn = connect(session_db)
+        summaries_path = session_db.parent / "summaries.sqlite"
+        migrate_summaries(summaries_path)
+        sum_conn = connect_summaries(summaries_path)
+
+        try:
+            if not should_fire_mirror(mem_conn, sum_conn):
+                return
+
+            log("Mirror trigger fired, running compression...")
+            agent = MirrorAgent(
+                db_path=session_db,
+                summaries_path=summaries_path,
+                prompt_dir=cfg.prompt_dir,
+                api_key=cfg.claude_api_key,
+            )
+            result = agent.execute()
+
+            for note in result.notes:
+                log(f"mirror: {note}")
+            for error in result.errors:
+                log(f"mirror error: {error}")
+
+        finally:
+            sum_conn.close()
+            mem_conn.close()
+
+    except Exception as e:
+        log(f"mirror: failed — {e}")
 
 
 def cleanup_old_jobs(jobs_dir: Path, max_age_seconds: int = 300) -> int:

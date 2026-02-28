@@ -14,7 +14,7 @@ import sqlite3
 from pathlib import Path
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -43,6 +43,8 @@ def migrate(db_path: Path) -> None:
             _migrate_v1_to_v2(conn)
         if current < 3:
             _migrate_v2_to_v3(conn)
+        if current < 4:
+            _migrate_v3_to_v4(conn)
         conn.execute("DELETE FROM schema_version")
         conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
         conn.commit()
@@ -109,6 +111,19 @@ def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
     cols = {row[1] for row in conn.execute("PRAGMA table_info(working_memory)")}
     if "turn" not in cols:
         conn.execute("ALTER TABLE working_memory ADD COLUMN turn INTEGER")
+
+
+def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
+    """Add working_memory_deps table for WM item dependencies."""
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS working_memory_deps (
+            wm_id        INTEGER NOT NULL,
+            blocked_by   INTEGER NOT NULL,
+            PRIMARY KEY (wm_id, blocked_by),
+            FOREIGN KEY (wm_id) REFERENCES working_memory(id) ON DELETE CASCADE,
+            FOREIGN KEY (blocked_by) REFERENCES working_memory(id) ON DELETE CASCADE
+        );
+    """)
 
 
 VALID_WM_TYPES = frozenset({"feeling", "thought", "pattern", "desc", "plan", "pin", "secret"})
