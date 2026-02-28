@@ -13,7 +13,7 @@ declare(strict_types=1);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/style.css?v=3">
+  <link rel="stylesheet" href="static/style.css?v=4">
 </head>
 <body>
 
@@ -26,7 +26,8 @@ declare(strict_types=1);
     <p class="hero-sub">Persistent memory for stateless AI</p>
     <p class="hero-description">
       Every turn, a context window is assembled from scored memory,
-      knowledge fragments, and graph recall. The AI wakes up inside it.
+      knowledge fragments, and graph recall &mdash; all within a fixed token budget.
+      The AI wakes up inside it with no memory of its own.
     </p>
   </div>
 
@@ -62,6 +63,11 @@ declare(strict_types=1);
     </div>
   </div>
 
+  <p class="budget-line">
+    No fine-tuning. No vector database. Personality, knowledge, scored memory,
+    compressed history, and conversation &mdash; assembled into ~10K tokens, fresh every turn.
+  </p>
+
   <div class="features">
     <div class="feature feature-mirror">
       <div class="feature-header">
@@ -80,16 +86,17 @@ declare(strict_types=1);
       </div>
       <div class="feature-detail">
         <p class="feature-body">
-          Haiku strips formatting and noise. If the conversation is action-heavy
-          (DO-density &gt; 40%), Sonnet compresses the action passages first.
+          Haiku strips formatting and noise. When conversations include dense
+          action sequences, Sonnet adds an extra compression pass.
           Then Opus writes a summary and suggests working memory tags &mdash;
           pins, patterns, and descriptions that should persist.
         </p>
         <p class="feature-body">
           Each new summary folds in the previous one. Generation 0 covers the
           first batch; generation 5 covers the entire conversation. The most
-          recent summary always carries everything. Pipeline fires automatically
-          every ~1500 conversation tokens.
+          recent summary always carries everything &mdash; a few hundred tokens
+          for the whole history. Pipeline fires automatically every ~1500
+          conversation tokens.
         </p>
       </div>
     </div>
@@ -156,9 +163,9 @@ declare(strict_types=1);
           sufficient &mdash; max wins.
         </p>
         <p class="feature-body">
-          Items scoring above 0.15 that aren't already in Lingering fill the
-          remaining token budget, highest scores first. Recall results from
-          the crystal graph get priority. Blocked items surface in shallow
+          Items scoring above 0.15 that aren't already in working memory fill
+          the remaining token budget, highest scores first. Recall results from
+          the knowledge graph get priority. Blocked items surface in shallow
           form &mdash; just the subject and what's blocking them.
         </p>
       </div>

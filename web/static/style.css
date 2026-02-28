@@ -207,6 +207,20 @@ html, body {
   50% { transform: translateY(-3px); }
 }
 
+/* Budget line */
+
+.budget-line {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 420px;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: fade-up 0.8s ease-out forwards;
+  animation-delay: 3.8s;
+}
+
 /* Feature cards */
 
 .features {
@@ -922,6 +936,10 @@ html, body {
   .assembly-window {
     max-width: 300px;
     padding: 1rem;
+  }
+
+  .budget-line {
+    max-width: 300px;
   }
 
   .features {
